@@ -1,26 +1,454 @@
 @import "tailwindcss";
 
+/* Smooth theme transitions */
+:root,
+:root.light,
+:root.dark {
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base colors (Default) */
+  --background: #FFFFFF;
+  --foreground: #373530;
+  
+  /* Notion Default */
+  --notion-default-bg: #FFFFFF;
+  --notion-default-bg-hover: #F5F5F5;
+  --notion-default-text: #373530;
+  --notion-default-text-hover: #2E2D29;
+  --notion-default-border: #E9E9E7;
+  
+  /* Notion Gray */
+  --notion-gray-bg: #F1F1EF;
+  --notion-gray-bg-hover: #E9E9E7;
+  --notion-gray-text: #787774;
+  --notion-gray-text-hover: #6B6B69;
+  --notion-gray-border: #E0E0DE;
+  
+  /* Notion Brown */
+  --notion-brown-bg: #F3EEEE;
+  --notion-brown-bg-hover: #EDE8E8;
+  --notion-brown-text: #976D57;
+  --notion-brown-text-hover: #8A604A;
+  --notion-brown-border: #E8E0E0;
+  
+  /* Notion Orange */
+  --notion-orange-bg: #F8ECDF;
+  --notion-orange-bg-hover: #F2E0CF;
+  --notion-orange-text: #CC782F;
+  --notion-orange-text-hover: #B8691F;
+  --notion-orange-border: #EDD9C7;
+  
+  /* Notion Yellow */
+  --notion-yellow-bg: #FAF3DD;
+  --notion-yellow-bg-hover: #F4EBC9;
+  --notion-yellow-text: #C29343;
+  --notion-yellow-text-hover: #B08433;
+  --notion-yellow-border: #F0E5C4;
+  
+  /* Notion Green */
+  --notion-green-bg: #EEF3ED;
+  --notion-green-bg-hover: #E4EDE1;
+  --notion-green-text: #548164;
+  --notion-green-text-hover: #4A7254;
+  --notion-green-border: #DAE5D7;
+  
+  /* Notion Blue */
+  --notion-blue-bg: #E9F3F7;
+  --notion-blue-bg-hover: #DFEDF1;
+  --notion-blue-text: #487CA5;
+  --notion-blue-text-hover: #3E6D95;
+  --notion-blue-border: #D5E5EB;
+  
+  /* Notion Purple */
+  --notion-purple-bg: #F6F3F8;
+  --notion-purple-bg-hover: #F0EBF2;
+  --notion-purple-text: #8A67AB;
+  --notion-purple-text-hover: #7D5A9B;
+  --notion-purple-border: #E8E0ED;
+  
+  /* Notion Pink */
+  --notion-pink-bg: #F9F2F5;
+  --notion-pink-bg-hover: #F3E8ED;
+  --notion-pink-text: #B35488;
+  --notion-pink-text-hover: #A64478;
+  --notion-pink-border: #EDDCE3;
+  
+  /* Notion Red */
+  --notion-red-bg: #FAECEC;
+  --notion-red-bg-hover: #F4E0E0;
+  --notion-red-text: #C4554D;
+  --notion-red-text-hover: #B5453D;
+  --notion-red-border: #F0D8D8;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  
+  /* Notion Default */
+  --color-notion-default-bg: var(--notion-default-bg);
+  --color-notion-default-bg-hover: var(--notion-default-bg-hover);
+  --color-notion-default-text: var(--notion-default-text);
+  --color-notion-default-text-hover: var(--notion-default-text-hover);
+  --color-notion-default-border: var(--notion-default-border);
+  
+  /* Notion Gray */
+  --color-notion-gray-bg: var(--notion-gray-bg);
+  --color-notion-gray-bg-hover: var(--notion-gray-bg-hover);
+  --color-notion-gray-text: var(--notion-gray-text);
+  --color-notion-gray-text-hover: var(--notion-gray-text-hover);
+  --color-notion-gray-border: var(--notion-gray-border);
+  
+  /* Notion Brown */
+  --color-notion-brown-bg: var(--notion-brown-bg);
+  --color-notion-brown-bg-hover: var(--notion-brown-bg-hover);
+  --color-notion-brown-text: var(--notion-brown-text);
+  --color-notion-brown-text-hover: var(--notion-brown-text-hover);
+  --color-notion-brown-border: var(--notion-brown-border);
+  
+  /* Notion Orange */
+  --color-notion-orange-bg: var(--notion-orange-bg);
+  --color-notion-orange-bg-hover: var(--notion-orange-bg-hover);
+  --color-notion-orange-text: var(--notion-orange-text);
+  --color-notion-orange-text-hover: var(--notion-orange-text-hover);
+  --color-notion-orange-border: var(--notion-orange-border);
+  
+  /* Notion Yellow */
+  --color-notion-yellow-bg: var(--notion-yellow-bg);
+  --color-notion-yellow-bg-hover: var(--notion-yellow-bg-hover);
+  --color-notion-yellow-text: var(--notion-yellow-text);
+  --color-notion-yellow-text-hover: var(--notion-yellow-text-hover);
+  --color-notion-yellow-border: var(--notion-yellow-border);
+  
+  /* Notion Green */
+  --color-notion-green-bg: var(--notion-green-bg);
+  --color-notion-green-bg-hover: var(--notion-green-bg-hover);
+  --color-notion-green-text: var(--notion-green-text);
+  --color-notion-green-text-hover: var(--notion-green-text-hover);
+  --color-notion-green-border: var(--notion-green-border);
+  
+  /* Notion Blue */
+  --color-notion-blue-bg: var(--notion-blue-bg);
+  --color-notion-blue-bg-hover: var(--notion-blue-bg-hover);
+  --color-notion-blue-text: var(--notion-blue-text);
+  --color-notion-blue-text-hover: var(--notion-blue-text-hover);
+  --color-notion-blue-border: var(--notion-blue-border);
+  
+  /* Notion Purple */
+  --color-notion-purple-bg: var(--notion-purple-bg);
+  --color-notion-purple-bg-hover: var(--notion-purple-bg-hover);
+  --color-notion-purple-text: var(--notion-purple-text);
+  --color-notion-purple-text-hover: var(--notion-purple-text-hover);
+  --color-notion-purple-border: var(--notion-purple-border);
+  
+  /* Notion Pink */
+  --color-notion-pink-bg: var(--notion-pink-bg);
+  --color-notion-pink-bg-hover: var(--notion-pink-bg-hover);
+  --color-notion-pink-text: var(--notion-pink-text);
+  --color-notion-pink-text-hover: var(--notion-pink-text-hover);
+  --color-notion-pink-border: var(--notion-pink-border);
+  
+  /* Notion Red */
+  --color-notion-red-bg: var(--notion-red-bg);
+  --color-notion-red-bg-hover: var(--notion-red-bg-hover);
+  --color-notion-red-text: var(--notion-red-text);
+  --color-notion-red-text-hover: var(--notion-red-text-hover);
+  --color-notion-red-border: var(--notion-red-border);
 }
 
+/* Dark mode support - class-based */
+.dark {
+  /* Base colors (Default) */
+  --background: #191919;
+  --foreground: #D4D4D4;
+  
+  /* Notion Default (dark) */
+  --notion-default-bg: #191919;
+  --notion-default-bg-hover: #252525;
+  --notion-default-text: #D4D4D4;
+  --notion-default-text-hover: #FFFFFF;
+  --notion-default-border: #404040;
+  
+  /* Notion Gray (dark) */
+  --notion-gray-bg: #252525;
+  --notion-gray-bg-hover: #2E2E2E;
+  --notion-gray-text: #9B9B9B;
+  --notion-gray-text-hover: #B0B0B0;
+  --notion-gray-border: #404040;
+  
+  /* Notion Brown (dark) */
+  --notion-brown-bg: #2E2724;
+  --notion-brown-bg-hover: #3A322F;
+  --notion-brown-text: #A27763;
+  --notion-brown-text-hover: #B58973;
+  --notion-brown-border: #3A322F;
+  
+  /* Notion Orange (dark) */
+  --notion-orange-bg: #36291F;
+  --notion-orange-bg-hover: #423529;
+  --notion-orange-text: #CB7B37;
+  --notion-orange-text-hover: #D98B47;
+  --notion-orange-border: #423529;
+  
+  /* Notion Yellow (dark) */
+  --notion-yellow-bg: #372E20;
+  --notion-yellow-bg-hover: #433A2C;
+  --notion-yellow-text: #C19138;
+  --notion-yellow-text-hover: #D1A148;
+  --notion-yellow-border: #433A2C;
+  
+  /* Notion Green (dark) */
+  --notion-green-bg: #242B26;
+  --notion-green-bg-hover: #303732;
+  --notion-green-text: #4F9768;
+  --notion-green-text-hover: #5AA778;
+  --notion-green-border: #303732;
+  
+  /* Notion Blue (dark) */
+  --notion-blue-bg: #1F282D;
+  --notion-blue-bg-hover: #2B3439;
+  --notion-blue-text: #447ACB;
+  --notion-blue-text-hover: #548ADB;
+  --notion-blue-border: #2B3439;
+  
+  /* Notion Purple (dark) */
+  --notion-purple-bg: #2A2430;
+  --notion-purple-bg-hover: #363040;
+  --notion-purple-text: #865DBB;
+  --notion-purple-text-hover: #966DCB;
+  --notion-purple-border: #363040;
+  
+  /* Notion Pink (dark) */
+  --notion-pink-bg: #2E2328;
+  --notion-pink-bg-hover: #3A2F34;
+  --notion-pink-text: #BA4A78;
+  --notion-pink-text-hover: #CA5A88;
+  --notion-pink-border: #3A2F34;
+  
+  /* Notion Red (dark) */
+  --notion-red-bg: #332523;
+  --notion-red-bg-hover: #3F312F;
+  --notion-red-text: #BE524B;
+  --notion-red-text-hover: #CE625B;
+  --notion-red-border: #3F312F;
+}
+
+/* Light mode - explicit override */
+.light {
+  /* Ensure light mode colors are applied */
+  --background: #FFFFFF;
+  --foreground: #373530;
+  
+  /* Notion Default */
+  --notion-default-bg: #FFFFFF;
+  --notion-default-bg-hover: #F5F5F5;
+  --notion-default-text: #373530;
+  --notion-default-text-hover: #2E2D29;
+  --notion-default-border: #E9E9E7;
+  
+  /* Notion Gray */
+  --notion-gray-bg: #F1F1EF;
+  --notion-gray-bg-hover: #E9E9E7;
+  --notion-gray-text: #787774;
+  --notion-gray-text-hover: #6B6B69;
+  --notion-gray-border: #E0E0DE;
+  
+  /* Notion Brown */
+  --notion-brown-bg: #F3EEEE;
+  --notion-brown-bg-hover: #EDE8E8;
+  --notion-brown-text: #976D57;
+  --notion-brown-text-hover: #8A604A;
+  --notion-brown-border: #E8E0E0;
+  
+  /* Notion Orange */
+  --notion-orange-bg: #F8ECDF;
+  --notion-orange-bg-hover: #F2E0CF;
+  --notion-orange-text: #CC782F;
+  --notion-orange-text-hover: #B8691F;
+  --notion-orange-border: #EDD9C7;
+  
+  /* Notion Yellow */
+  --notion-yellow-bg: #FAF3DD;
+  --notion-yellow-bg-hover: #F4EBC9;
+  --notion-yellow-text: #C29343;
+  --notion-yellow-text-hover: #B08433;
+  --notion-yellow-border: #F0E5C4;
+  
+  /* Notion Green */
+  --notion-green-bg: #EEF3ED;
+  --notion-green-bg-hover: #E4EDE1;
+  --notion-green-text: #548164;
+  --notion-green-text-hover: #4A7254;
+  --notion-green-border: #DAE5D7;
+  
+  /* Notion Blue */
+  --notion-blue-bg: #E9F3F7;
+  --notion-blue-bg-hover: #DFEDF1;
+  --notion-blue-text: #487CA5;
+  --notion-blue-text-hover: #3E6D95;
+  --notion-blue-border: #D5E5EB;
+  
+  /* Notion Purple */
+  --notion-purple-bg: #F6F3F8;
+  --notion-purple-bg-hover: #F0EBF2;
+  --notion-purple-text: #8A67AB;
+  --notion-purple-text-hover: #7D5A9B;
+  --notion-purple-border: #E8E0ED;
+  
+  /* Notion Pink */
+  --notion-pink-bg: #F9F2F5;
+  --notion-pink-bg-hover: #F3E8ED;
+  --notion-pink-text: #B35488;
+  --notion-pink-text-hover: #A64478;
+  --notion-pink-border: #EDDCE3;
+  
+  /* Notion Red */
+  --notion-red-bg: #FAECEC;
+  --notion-red-bg-hover: #F4E0E0;
+  --notion-red-text: #C4554D;
+  --notion-red-text-hover: #B5453D;
+  --notion-red-border: #F0D8D8;
+}
+
+/* Dark mode support - system preference (fallback when no class is set) */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not(.light) {
+    /* Base colors (Default) */
+    --background: #191919;
+    --foreground: #D4D4D4;
+    
+    /* Notion Default (dark) */
+    --notion-default-bg: #191919;
+    --notion-default-bg-hover: #252525;
+    --notion-default-text: #D4D4D4;
+    --notion-default-text-hover: #FFFFFF;
+    --notion-default-border: #404040;
+    
+    /* Notion Gray (dark) */
+    --notion-gray-bg: #252525;
+    --notion-gray-bg-hover: #2E2E2E;
+    --notion-gray-text: #9B9B9B;
+    --notion-gray-text-hover: #B0B0B0;
+    --notion-gray-border: #404040;
+    
+    /* Notion Brown (dark) */
+    --notion-brown-bg: #2E2724;
+    --notion-brown-bg-hover: #3A322F;
+    --notion-brown-text: #A27763;
+    --notion-brown-text-hover: #B58973;
+    --notion-brown-border: #3A322F;
+    
+    /* Notion Orange (dark) */
+    --notion-orange-bg: #36291F;
+    --notion-orange-bg-hover: #423529;
+    --notion-orange-text: #CB7B37;
+    --notion-orange-text-hover: #D98B47;
+    --notion-orange-border: #423529;
+    
+    /* Notion Yellow (dark) */
+    --notion-yellow-bg: #372E20;
+    --notion-yellow-bg-hover: #433A2C;
+    --notion-yellow-text: #C19138;
+    --notion-yellow-text-hover: #D1A148;
+    --notion-yellow-border: #433A2C;
+    
+    /* Notion Green (dark) */
+    --notion-green-bg: #242B26;
+    --notion-green-bg-hover: #303732;
+    --notion-green-text: #4F9768;
+    --notion-green-text-hover: #5AA778;
+    --notion-green-border: #303732;
+    
+    /* Notion Blue (dark) */
+    --notion-blue-bg: #1F282D;
+    --notion-blue-bg-hover: #2B3439;
+    --notion-blue-text: #447ACB;
+    --notion-blue-text-hover: #548ADB;
+    --notion-blue-border: #2B3439;
+    
+    /* Notion Purple (dark) */
+    --notion-purple-bg: #2A2430;
+    --notion-purple-bg-hover: #363040;
+    --notion-purple-text: #865DBB;
+    --notion-purple-text-hover: #966DCB;
+    --notion-purple-border: #363040;
+    
+    /* Notion Pink (dark) */
+    --notion-pink-bg: #2E2328;
+    --notion-pink-bg-hover: #3A2F34;
+    --notion-pink-text: #BA4A78;
+    --notion-pink-text-hover: #CA5A88;
+    --notion-pink-border: #3A2F34;
+    
+    /* Notion Red (dark) */
+    --notion-red-bg: #332523;
+    --notion-red-bg-hover: #3F312F;
+    --notion-red-text: #BE524B;
+    --notion-red-text-hover: #CE625B;
+    --notion-red-border: #3F312F;
   }
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+  letter-spacing: -0.003em;
+}
+
+/* Notion Typography Styles */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+h2 {
+  /* font-size and font-weight removed to allow Tailwind classes to override */
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+p {
+  /* font-size and font-weight removed to allow Tailwind classes to override */
+  line-height: 1.5;
+  letter-spacing: -0.003em;
+}
+
+button {
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.003em;
+}
+
+input, textarea {
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: -0.003em;
 }
