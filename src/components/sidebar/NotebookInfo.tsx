@@ -11,9 +11,10 @@ interface NotebookInfoProps {
   onUpdate: (id: string, updates: { title?: string; description?: string }) => void;
   onAddPage?: () => void;
   onDeletePage?: (pageId: string) => void;
+  onUpdatePage?: (pageId: string, updates: { title?: string }) => void;
 }
 
-export function NotebookInfo({ notebook, notebookId, pages, onUpdate, onAddPage, onDeletePage }: NotebookInfoProps) {
+export function NotebookInfo({ notebook, notebookId, pages, onUpdate, onAddPage, onDeletePage, onUpdatePage }: NotebookInfoProps) {
   const handleUpdate = (updates: { title?: string; description?: string }) => {
     onUpdate(notebookId, updates);
   };
@@ -49,7 +50,7 @@ export function NotebookInfo({ notebook, notebookId, pages, onUpdate, onAddPage,
 
       {/* Scrollable Pages List */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <NotebookPagesList notebookId={notebookId} pages={pages} onAddPage={onAddPage} onDeletePage={onDeletePage} />
+        <NotebookPagesList notebookId={notebookId} pages={pages} onAddPage={onAddPage} onDeletePage={onDeletePage} onUpdatePage={onUpdatePage} />
       </div>
     </div>
   );

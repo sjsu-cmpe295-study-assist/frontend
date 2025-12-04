@@ -61,30 +61,30 @@ export function EditableNotebookDescription({ notebook, notebookId, onUpdate }: 
     }
   };
 
-  if (isEditing) {
-    return (
-      <textarea
-        ref={textareaRef}
-        value={editedDescription}
-        onChange={handleChange}
-        onBlur={handleSave}
-        onKeyDown={handleKeyDown}
-        className="w-full !text-base text-[var(--notion-gray-text)] bg-[var(--background)] border border-[var(--notion-blue-border)] rounded-md px-3 py-1 -mx-2 resize-none focus:outline-none focus:ring-2 focus:ring-[var(--notion-blue-text)] overflow-hidden"
-        style={{ lineHeight: '1.5', paddingTop: '0.5rem', paddingBottom: '0.5rem', minHeight: 'auto' }}
-        rows={1}
-      />
-    );
-  }
-
   return (
     <p
       onClick={() => setIsEditing(true)}
-      className={`text-base text-[var(--notion-gray-text)] mb-4 line-clamp-3 cursor-text hover:bg-[var(--notion-gray-bg-hover)] rounded px-3 py-1 -mx-2 transition-colors ${
-        !notebook.description ? 'italic opacity-50' : ''
+      className={`text-base text-[var(--notion-gray-text)] mb-4 ${!isEditing ? 'line-clamp-3' : ''} cursor-text hover:bg-[var(--notion-gray-bg-hover)] rounded px-3 py-1 -mx-2 transition-colors ${
+        !notebook.description && !isEditing ? 'italic opacity-50' : ''
       }`}
-      style={{ lineHeight: '1.5', paddingTop: '0.5rem', paddingBottom: '0.5rem' }}
+      style={{ lineHeight: '1.5' }}
     >
-      {notebook.description || 'Click to add description...'}
+      {isEditing ? (
+        <textarea
+          ref={textareaRef}
+          value={editedDescription}
+          onChange={handleChange}
+          onBlur={handleSave}
+          onKeyDown={handleKeyDown}
+          onClick={(e) => e.stopPropagation()}
+          className="w-full !text-base text-[var(--notion-gray-text)] bg-transparent border-none outline-none resize-none overflow-hidden px-0 !py-0 !m-0"
+          style={{ lineHeight: '1.5', minHeight: 'auto', width: '100%' }}
+          rows={1}
+          placeholder="Click to add description..."
+        />
+      ) : (
+        notebook.description || 'Click to add description...'
+      )}
     </p>
   );
 }

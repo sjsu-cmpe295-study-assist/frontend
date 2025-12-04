@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { X, Upload, FileText, Loader2, Plus, Sparkles } from 'lucide-react';
+import { X, Upload, FileText, Loader2, Sparkles } from 'lucide-react';
 import { Button } from './Button';
 
 interface Document {
@@ -82,11 +82,6 @@ export function NewNotebookModal({ isOpen, onClose, onCreate }: NewNotebookModal
 
   const removeDocument = (id: string) => {
     setDocuments((prev) => prev.filter((d) => d.id !== id));
-  };
-
-  const handleCreateEmpty = () => {
-    onCreate({});
-    handleClose();
   };
 
   const handleCreate = () => {
@@ -222,15 +217,7 @@ export function NewNotebookModal({ isOpen, onClose, onCreate }: NewNotebookModal
                     <span>Cancel</span>
                   </Button>
                 </div>
-                <div className="absolute bottom-3 right-3 flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    onClick={handleCreateEmpty}
-                    className="flex items-center gap-2 px-4 py-2"
-                  >
-                    <Plus className="w-5 h-5" />
-                    <span>Create Empty</span>
-                  </Button>
+                <div className="absolute bottom-3 right-3">
                   <Button
                     variant="primary"
                     onClick={handleCreate}

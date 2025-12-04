@@ -58,28 +58,27 @@ export function EditableNotebookTitle({ notebook, notebookId, onUpdate }: Editab
     }
   };
 
-  if (isEditing) {
-    return (
-      <textarea
-        ref={textareaRef}
-        value={editedTitle}
-        onChange={handleChange}
-        onBlur={handleSave}
-        onKeyDown={handleKeyDown}
-        className="w-full !text-2xl !font-semibold text-[var(--notion-gray-text)] bg-[var(--background)] border border-[var(--notion-blue-border)] rounded-md px-3 py-1 -mx-2 resize-none focus:outline-none focus:ring-2 focus:ring-[var(--notion-blue-text)] overflow-hidden"
-        style={{ lineHeight: '1.5', paddingTop: '0.5rem', paddingBottom: '0.5rem', minHeight: 'auto' }}
-        rows={1}
-      />
-    );
-  }
-
   return (
     <h2
       onClick={() => setIsEditing(true)}
       className="text-2xl font-semibold mb-4 line-clamp-3 cursor-text hover:bg-[var(--notion-gray-bg-hover)] rounded px-1 py-1 -mx-3 transition-colors"
-      style={{ lineHeight: '1.5', paddingTop: '0.5rem', paddingBottom: '0.5rem' }}
+      style={{ lineHeight: '1.5',  }}
     >
-      {notebook.title}
+      {isEditing ? (
+        <textarea
+          ref={textareaRef}
+          value={editedTitle}
+          onChange={handleChange}
+          onBlur={handleSave}
+          onKeyDown={handleKeyDown}
+          onClick={(e) => e.stopPropagation()}
+          className="w-full !text-2xl !font-semibold text-[var(--foreground)] bg-transparent border-none outline-none resize-none overflow-hidden px-0 !py-0 !m-0"
+          style={{ lineHeight: '1.5', minHeight: 'auto', width: '90%' }}
+          rows={1}
+        />
+      ) : (
+        notebook.title
+      )}
     </h2>
   );
 }

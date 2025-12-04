@@ -1,61 +1,63 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getNotebookById, getPagesByNotebookId } from '@/lib/mock-data';
+import { useMemo } from 'react';
+import { useNotebookStore } from '@/stores/notebookStore';
 import { SidebarHeader } from './sidebar/SidebarHeader';
 import { NavigationItems } from './sidebar/NavigationItems';
 import { NotebookInfo } from './sidebar/NotebookInfo';
 import { UserSection } from './sidebar/UserSection';
 
+import type { Notebook } from '@/lib/mock-data';
+
 interface SidebarProps {
   notebookId?: string;
-  notebook?: ReturnType<typeof getNotebookById>;
+  notebook?: Notebook;
   onNotebookUpdate?: (id: string, updates: { title?: string; description?: string }) => void;
   onAddPage?: () => void;
   onDeletePage?: (pageId: string) => void;
+  onUpdatePage?: (pageId: string, updates: { title?: string }) => void;
 }
 
-export function Sidebar({ notebookId, notebook: notebookProp, onNotebookUpdate, onAddPage, onDeletePage }: SidebarProps = {}) {
-  const notebook = notebookProp || (notebookId ? getNotebookById(notebookId) : undefined);
-  const [pages, setPages] = useState(notebookId ? getPagesByNotebookId(notebookId) : []);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+export function Sidebar({ notebookId, notebook: notebookProp, onNotebookUpdate, onAddPage, onDeletePage, onUpdatePage }: SidebarProps = {}) {
+  const { getNotebookById, getPagesByNotebookId } = useNotebookStore();
+  
+  const notebook = useMemo(() => {
+    return notebookProp || (notebookId ? getNotebookById(notebookId) : undefined);
+  }, [notebookProp, notebookId, getNotebookById]);
+  
+  const pages = useMemo(() => {
+    if (!notebookId) return [];
+    const allPages = getPagesByNotebookId(notebookId);
+    // Deduplicate by page ID to prevent React key warnings
+    const uniquePages = Array.from(
+      new Map(allPages.map(page => [page.id, page])).values()
+    );
+    return uniquePages;
+  }, [notebookId, getPagesByNotebookId]);
 
-  // Update pages when notebook or notebookId changes
-  useEffect(() => {
-    if (notebookId) {
-      const updatedPages = getPagesByNotebookId(notebookId);
-      setPages(updatedPages);
-    } else {
-      setPages([]);
-    }
-  }, [notebookId, notebook?.pagesCount, notebook?.updatedAt, notebook?.pages?.length, refreshTrigger]);
-
-  // Wrapper for onDeletePage that refreshes pages
+  // Wrapper for onDeletePage
   const handleDeletePage = (pageId: string) => {
-    if (onDeletePage && notebookId) {
-      // Call parent callback first (this deletes the page from mock data)
+    if (onDeletePage) {
       onDeletePage(pageId);
-      // Force refresh by updating trigger and pages state
-      setRefreshTrigger(prev => prev + 1);
-      const updatedPages = getPagesByNotebookId(notebookId);
-      setPages(updatedPages);
     }
   };
 
-  // Wrapper for onAddPage that refreshes pages
+  // Wrapper for onAddPage
   const handleAddPage = () => {
-    if (onAddPage && notebookId) {
-      // Call parent callback first (this adds the page to mock data)
+    if (onAddPage) {
       onAddPage();
-      // Force refresh by updating trigger and pages state
-      setRefreshTrigger(prev => prev + 1);
-      const updatedPages = getPagesByNotebookId(notebookId);
-      setPages(updatedPages);
+    }
+  };
+
+  // Wrapper for onUpdatePage
+  const handleUpdatePage = (pageId: string, updates: { title?: string }) => {
+    if (onUpdatePage) {
+      onUpdatePage(pageId, updates);
     }
   };
 
   return (
-    <div className="h-screen w-80 border-r border-[var(--notion-gray-border)] bg-[var(--background)] flex flex-col">
+    <div className="fixed left-0 top-0 h-screen w-80 border-r border-[var(--notion-gray-border)] bg-[var(--background)] flex flex-col z-10">
       <SidebarHeader notebook={notebook} />
 
       <div className="flex-1 overflow-hidden flex flex-col">
@@ -67,6 +69,7 @@ export function Sidebar({ notebookId, notebook: notebookProp, onNotebookUpdate, 
             onUpdate={onNotebookUpdate || (() => {})}
             onAddPage={handleAddPage}
             onDeletePage={handleDeletePage}
+            onUpdatePage={handleUpdatePage}
           />
         ) : (
           <div className="flex-1 overflow-y-auto py-4">

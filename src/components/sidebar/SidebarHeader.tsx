@@ -12,7 +12,7 @@ export function SidebarHeader({ notebook }: SidebarHeaderProps) {
       {notebook ? (
         <Link
           href="/"
-          className="flex items-center gap-2 text-[var(--notion-gray-text)] hover:text-[var(--foreground)] transition-colors"
+          className="flex items-center gap-2 text-[var(--notion-gray-text)] hover:text-[var(--notion-blue-text)] transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="text-base font-semibold">Back to Notebooks</span>

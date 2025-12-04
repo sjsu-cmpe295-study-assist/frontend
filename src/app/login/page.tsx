@@ -1,39 +1,41 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { login, getCurrentUser, type LoginData } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/stores/authStore';
+import type { LoginData } from '@/lib/api/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login: setAuthUser } = useAuth();
+  const { login, error: authError, isLoading, clearError } = useAuthStore();
   const [formData, setFormData] = useState<LoginData>({
     email: '',
     password: '',
   });
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
+    clearError();
+    setIsSubmitting(true);
 
     try {
       await login(formData);
-      // Get user data after successful login
-      const userData = await getCurrentUser();
-      setAuthUser(userData);
       router.push('/');
     } catch (err: any) {
-      setError(err.detail || 'Failed to login. Please check your credentials.');
+      setError(err.detail || authError || 'Failed to login. Please check your credentials.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -86,7 +88,7 @@ export default function LoginPage() {
             autoComplete="current-password"
           />
 
-          <Button type="submit" isLoading={isLoading} className="w-full">
+          <Button type="submit" isLoading={isSubmitting || isLoading} className="w-full">
             Sign in
           </Button>
         </form>
@@ -96,7 +98,7 @@ export default function LoginPage() {
             Don't have an account?{' '}
             <Link
               href="/signup"
-              className="text-[var(--foreground)] font-medium hover:opacity-80 transition-opacity"
+              className="text-[var(--notion-blue-text)] font-medium hover:text-[var(--notion-blue-text-hover)] transition-colors"
             >
               Sign up
             </Link>

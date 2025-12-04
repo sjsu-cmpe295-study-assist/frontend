@@ -1,10 +1,10 @@
 import { Moon, Sun, LogOut } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useAuthStore } from '@/stores/authStore';
+import { useThemeStore } from '@/stores/themeStore';
 
 export function UserSection() {
-  const { user, logout } = useAuth();
-  const { resolvedTheme, toggleTheme } = useTheme();
+  const { user, logout } = useAuthStore();
+  const { resolvedTheme, toggleTheme } = useThemeStore();
 
   const getInitials = (name: string) => {
     return name

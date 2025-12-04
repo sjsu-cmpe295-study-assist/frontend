@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileText, Paperclip, MoreHorizontal, Trash2 } from 'lucide-react';
 import { type Notebook } from '@/lib/mock-data';
+import { useNotebookStore } from '@/stores/notebookStore';
 
 interface NotebookCardProps {
   notebook: Notebook;
@@ -13,6 +14,7 @@ interface NotebookCardProps {
 
 export function NotebookCard({ notebook, titleSize = 'md', onDelete }: NotebookCardProps) {
   const router = useRouter();
+  const { getPagesByNotebookId } = useNotebookStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -58,13 +60,26 @@ export function NotebookCard({ notebook, titleSize = 'md', onDelete }: NotebookC
   };
 
   const handleCardClick = () => {
-    router.push(`/notebooks/${notebook.id}`);
+    // Prefetch routes for smoother navigation
+    router.prefetch(`/notebooks/${notebook.id}`);
+    
+    // Check if pages are already in cache
+    const pages = getPagesByNotebookId(notebook.id);
+    
+    // Navigate directly to first page if pages exist in cache, otherwise to notebook detail
+    // The notebook detail page will handle fetching and redirecting if needed
+    if (pages.length > 0) {
+      router.prefetch(`/notebooks/${notebook.id}/pages/${pages[0].id}`);
+      router.push(`/notebooks/${notebook.id}/pages/${pages[0].id}`);
+    } else {
+      router.push(`/notebooks/${notebook.id}`);
+    }
   };
 
   return (
     <div 
       onClick={handleCardClick}
-      className="h-full min-h-[240px] flex flex-col rounded-lg p-6 border border-[var(--notion-gray-border)] bg-[var(--background)] cursor-pointer transition-all hover:shadow-md hover:bg-[var(--notion-default-bg-hover)] relative"
+      className="h-full min-h-[240px] min-w-[350px] flex flex-col rounded-lg p-6 border border-[var(--notion-gray-border)] bg-[var(--background)] cursor-pointer transition-all hover:shadow-md hover:bg-[var(--notion-default-bg-hover)] relative"
     >
       <h3 className={`${titleSizeClasses[titleSize]} font-semibold mb-3 text-[var(--foreground)] line-clamp-2`}>
         {notebook.title}

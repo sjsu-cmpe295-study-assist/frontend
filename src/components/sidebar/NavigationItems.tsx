@@ -27,7 +27,7 @@ export function NavigationItems() {
             href={item.href}
             className={`flex items-center gap-3 px-3 py-2 rounded-md text-base font-medium transition-colors mb-1 ${
               isActive
-                ? 'bg-[var(--notion-gray-bg)] text-[var(--foreground)]'
+                ? 'bg-[var(--notion-blue-bg)] text-[var(--notion-blue-text)]'
                 : 'text-[var(--notion-gray-text)] hover:bg-[var(--notion-gray-bg-hover)] hover:text-[var(--foreground)]'
             }`}
           >

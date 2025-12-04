@@ -17,7 +17,7 @@ export function Button({
   const baseClasses = 'px-4 py-2 rounded-md font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variantClasses = {
-    primary: 'bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 active:opacity-80',
+    primary: 'bg-[var(--notion-blue-text)] text-white hover:bg-[var(--notion-blue-text-hover)] active:opacity-90',
     secondary: 'bg-[var(--notion-gray-bg)] text-[var(--foreground)] border border-[var(--notion-gray-border)] hover:bg-[var(--notion-gray-bg-hover)]',
     ghost: 'text-[var(--foreground)] hover:bg-[var(--notion-gray-bg)]',
   };

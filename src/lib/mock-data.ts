@@ -5,8 +5,10 @@
 export interface Page {
   id: string;
   title: string;
+  content?: any; // JSONContent from Novel editor (TipTap/ProseMirror JSON format)
   updatedAt: string;
   createdAt: string;
+  notebookId?: string; // Reference to parent notebook
 }
 
 export interface Notebook {
@@ -19,6 +21,7 @@ export interface Notebook {
   pagesCount: number;
   documentsCount: number;
   pages?: Page[];
+  documents?: any[]; // Array of document objects
 }
 
 export const mockNotebooks: Notebook[] = [
@@ -221,6 +224,29 @@ export function addPageToNotebook(notebookId: string): Page | undefined {
   notebook.updatedAt = new Date().toISOString();
   
   return newPage;
+}
+
+// Helper function to update a page
+export function updatePage(notebookId: string, pageId: string, updates: { title?: string }): Page | undefined {
+  const notebook = getNotebookById(notebookId);
+  if (!notebook || !notebook.pages) return undefined;
+  
+  const pageIndex = notebook.pages.findIndex((p) => p.id === pageId);
+  if (pageIndex === -1) return undefined;
+  
+  const updatedPage = {
+    ...notebook.pages[pageIndex],
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
+  
+  notebook.pages[pageIndex] = updatedPage;
+  notebook.updatedAt = new Date().toISOString();
+  
+  // Sort by updatedAt (newest first) to maintain consistent order
+  notebook.pages.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  
+  return updatedPage;
 }
 
 // Helper function to delete a page from a notebook

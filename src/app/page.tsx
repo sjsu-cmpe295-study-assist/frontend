@@ -2,38 +2,54 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
-import { Search, BookOpen, Plus } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { Search, BookOpen, Plus, Sparkles } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
 import { Sidebar } from '@/components/Sidebar';
 import { SearchBar } from '@/components/SearchBar';
 import { NotebookCard } from '@/components/NotebookCard';
 import { Button } from '@/components/Button';
 import { NewNotebookModal } from '@/components/NewNotebookModal';
-import { mockNotebooksWithPages, type Notebook } from '@/lib/mock-data';
+import { useNotebookStore } from '@/stores/notebookStore';
 
 export default function Home() {
   const router = useRouter();
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, isLoading: loading } = useAuthStore();
+  const isAuthenticated = !!user;
   const [searchQuery, setSearchQuery] = useState('');
-  const [notebooks, setNotebooks] = useState<Notebook[]>(mockNotebooksWithPages);
   const [isNewNotebookModalOpen, setIsNewNotebookModalOpen] = useState(false);
+  
+  const { notebooks, fetchNotebooks, deleteNotebook, createNotebook } = useNotebookStore();
 
-  const handleDeleteNotebook = (notebookId: string) => {
-    setNotebooks((prev) => prev.filter((nb) => nb.id !== notebookId));
+  // Fetch notebooks on mount
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      fetchNotebooks();
+    }
+  }, [isAuthenticated, loading, fetchNotebooks]);
+
+  const handleDeleteNotebook = async (notebookId: string) => {
+    try {
+      await deleteNotebook(notebookId);
+    } catch (error) {
+      console.error('Failed to delete notebook:', error);
+    }
   };
 
-  const handleCreateNotebook = (data: { prompt?: string; documents?: any[] }) => {
-    // TODO: Implement actual notebook creation API call
-    const newNotebook: Notebook = {
-      id: Math.random().toString(36).substring(7),
-      title: 'Untitled Notebook',
-      description: data.prompt,
-      updatedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      pagesCount: 0,
-      documentsCount: data.documents?.length || 0,
-    };
-    setNotebooks((prev) => [newNotebook, ...prev]);
+  const handleCreateNotebook = async (data: { prompt?: string; documents?: any[] }) => {
+    try {
+      await createNotebook(data);
+      setIsNewNotebookModalOpen(false);
+    } catch (error) {
+      console.error('Failed to create notebook:', error);
+    }
+  };
+
+  const handleCreateEmpty = async () => {
+    try {
+      await createNotebook({});
+    } catch (error) {
+      console.error('Failed to create empty notebook:', error);
+    }
   };
 
   useEffect(() => {
@@ -105,36 +121,46 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] flex">
+    <div className="min-h-screen bg-[var(--background)]">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="ml-80 flex flex-col overflow-hidden min-h-screen">
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-[1600px] mx-auto px-8 py-8 mt-12">
             {/* Header with Title, Search Bar, and New Notebook Button */}
             <div className="flex items-center justify-between gap-4 mb-8">
-              <h2 className="text-3xl font-bold text-[var(--foreground)]">
+              <h2 className="text-3xl font-bold text-[var(--foreground)] flex-shrink-0">
                 Notebooks
               </h2>
-              <div className="flex items-center gap-3 flex-1 max-w-md">
-                <div className="flex-1">
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="w-80">
                   <SearchBar
                     value={searchQuery}
                     onChange={setSearchQuery}
                     placeholder="Search notebooks..."
                   />
                 </div>
-                <Button
-                  variant="primary"
-                  className="flex items-center gap-2 whitespace-nowrap"
-                  onClick={() => setIsNewNotebookModalOpen(true)}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>New Notebook</span>
-                </Button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Button
+                    variant="secondary"
+                    className="flex items-center gap-2 whitespace-nowrap"
+                    onClick={handleCreateEmpty}
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Create Empty</span>
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className="flex items-center gap-2 whitespace-nowrap"
+                    onClick={() => setIsNewNotebookModalOpen(true)}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Create Notebook</span>
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -148,8 +174,8 @@ export default function Home() {
                 </h3>
                 <p className="text-sm text-[var(--notion-gray-text)] opacity-70">
                   Try searching with different keywords
-                </p>
-              </div>
+          </p>
+        </div>
             ) : filteredNotebooks.length > 0 ? (
               <div className="gap-3 flex flex-col">
                 {groupedNotebooks.map(([monthYear, notebooks]) => (
@@ -157,7 +183,7 @@ export default function Home() {
                     <h3 className="text-sm font-semibold text-[var(--foreground)] tracking-wider">
                       {monthYear}
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))' }}>
                       {notebooks.map((notebook, index) => (
                         <NotebookCard
                           key={notebook.id}

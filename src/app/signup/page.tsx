@@ -1,17 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { signup, login, getCurrentUser, type SignupData } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/stores/authStore';
+import type { SignupData, LoginData } from '@/lib/api/auth';
 
 export default function SignupPage() {
   const router = useRouter();
-  const { login: setAuthUser } = useAuth();
+  const { signup, login, error: authError, isLoading, clearError } = useAuthStore();
   const [formData, setFormData] = useState<SignupData>({
     email: '',
     password: '',
@@ -19,7 +19,11 @@ export default function SignupPage() {
   });
   const [errors, setErrors] = useState<Partial<SignupData>>({});
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<SignupData> = {};
@@ -47,12 +51,13 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    clearError();
 
     if (!validateForm()) {
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
       // Create account
@@ -64,14 +69,11 @@ export default function SignupPage() {
         password: formData.password,
       });
       
-      // Get user data
-      const userData = await getCurrentUser();
-      setAuthUser(userData);
       router.push('/');
     } catch (err: any) {
-      setError(err.detail || 'Failed to create account. Please try again.');
+      setError(err.detail || authError || 'Failed to create account. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -141,7 +143,7 @@ export default function SignupPage() {
             minLength={8}
           />
 
-          <Button type="submit" isLoading={isLoading} className="w-full">
+          <Button type="submit" isLoading={isSubmitting || isLoading} className="w-full">
             Create account
           </Button>
         </form>
@@ -151,7 +153,7 @@ export default function SignupPage() {
             Already have an account?{' '}
             <Link
               href="/login"
-              className="text-[var(--foreground)] font-medium hover:opacity-80 transition-opacity"
+              className="text-[var(--notion-blue-text)] font-medium hover:text-[var(--notion-blue-text-hover)] transition-colors"
             >
               Sign in
             </Link>
