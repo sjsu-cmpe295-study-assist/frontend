@@ -43,9 +43,20 @@ export function NotebookCard({ notebook, titleSize = 'md', onDelete }: NotebookC
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Updated recently';
+    }
+    
     const diffInMs = now.getTime() - date.getTime();
     const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
+    // Handle future dates or same day
+    if (diffInDays < 0) {
+      return 'Updated today';
+    }
+    
     if (diffInDays === 0) return 'Updated today';
     if (diffInDays === 1) return 'Updated yesterday';
     if (diffInDays < 7) return `Updated ${diffInDays} days ago`;

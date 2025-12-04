@@ -1,26 +1,53 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Sparkles } from 'lucide-react';
+import { X, Send, Sparkles, Loader2 } from 'lucide-react';
+import { chatWithAI, type ChatMessage as ApiChatMessage } from '@/lib/api/notebooks';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  context?: string; // Context attached to user messages
 }
 
 interface AIChatPopoverProps {
   isOpen: boolean;
   onClose: () => void;
   context?: string;
+  notebookId?: string;
+  pageId?: string;
 }
 
-export function AIChatPopover({ isOpen, onClose }: AIChatPopoverProps) {
+export function AIChatPopover({ isOpen, onClose, context, notebookId, pageId }: AIChatPopoverProps) {
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Track if context has been used (attached to a message)
+  const [contextUsed, setContextUsed] = useState(false);
+
+  // Reset when popover opens or context changes significantly
+  useEffect(() => {
+    if (isOpen) {
+      // If context changes (new selection), reset conversation
+      if (context && context.length > 50) {
+        setMessages([]);
+        setConversationId(undefined);
+        setContextUsed(false);
+      } else {
+        setContextUsed(false);
+      }
+      setQuery('');
+      setError(null);
+    }
+  }, [isOpen, context]);
 
   useEffect(() => {
     if (isOpen) {
@@ -28,9 +55,20 @@ export function AIChatPopover({ isOpen, onClose }: AIChatPopoverProps) {
     }
   }, [isOpen]);
 
+  // Scroll to bottom when messages change
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (chatContainerRef.current) {
+      const scrollToBottom = () => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+      };
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        setTimeout(scrollToBottom, 100);
+      });
+    }
+  }, [messages, isLoading]);
 
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
@@ -43,28 +81,84 @@ export function AIChatPopover({ isOpen, onClose }: AIChatPopoverProps) {
     adjustTextareaHeight();
   }, [query]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        role: 'user',
-        content: query.trim(),
-        timestamp: new Date(),
+    if (!query.trim() || isLoading || !notebookId || !pageId) return;
+
+    const userMessageText = query.trim();
+    const messageContext = context && context.length > 50 ? context : undefined;
+    setQuery('');
+    setError(null);
+    setIsLoading(true);
+
+    // Mark context as used immediately (remove from input area)
+    if (messageContext) {
+      setContextUsed(true);
+    }
+
+    // Add user message to UI immediately with context attached
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: userMessageText,
+      timestamp: new Date(),
+      context: messageContext, // Attach context to message
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    try {
+      // Prepare request payload - include context and full message thread
+      const requestPayload = {
+        message: userMessageText,
+        context: messageContext, // Send context with the message
+        conversation_id: conversationId,
+        messages: [
+          // Include all previous messages
+          ...messages.map((msg): ApiChatMessage => ({
+            role: msg.role,
+            content: msg.content,
+            timestamp: msg.timestamp.toISOString(),
+          })),
+          // Include the current user message
+          {
+            role: 'user' as const,
+            content: userMessageText,
+            timestamp: new Date().toISOString(),
+          },
+        ],
       };
-      setMessages((prev) => [...prev, userMessage]);
-      setQuery('');
+
+      // Make API call
+      const response = await chatWithAI(notebookId, pageId, requestPayload);
+
+      // Add AI response to UI
+      const aiMessage: Message = {
+        id: response.id,
+        role: 'assistant',
+        content: response.content,
+        timestamp: new Date(response.timestamp),
+      };
+      setMessages((prev) => [...prev, aiMessage]);
       
-      // Simulate AI response (replace with actual API call)
+      // Scroll to bottom after adding message
       setTimeout(() => {
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: 'I understand your question. This is a placeholder response.',
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, aiMessage]);
-      }, 500);
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+      }, 50);
+
+      // Update conversation ID if provided
+      if (response.conversation_id) {
+        setConversationId(response.conversation_id);
+      }
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError(err instanceof Error ? err.message : 'Failed to get AI response');
+      
+      // Remove user message on error
+      setMessages((prev) => prev.filter((msg) => msg.id !== userMessage.id));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -86,7 +180,7 @@ export function AIChatPopover({ isOpen, onClose }: AIChatPopoverProps) {
       />
 
       {/* AI Chat Popover */}
-      <div className="fixed bottom-6 right-6 w-[500px] h-[700px] max-h-[calc(100vh-3rem)] bg-[var(--background)] border border-[var(--notion-gray-border)] rounded-4xl z-50 flex flex-col shadow-2xl transition-all duration-300 pb-5">
+      <div className={`fixed bottom-6 right-6 ${context && context.length > 50 ? 'w-[550px] h-[750px]' : 'w-[500px] h-[700px]'} max-h-[calc(100vh-3rem)] bg-[var(--background)] border border-[var(--notion-gray-border)] rounded-4xl z-50 flex flex-col shadow-2xl transition-all duration-300 pb-5`}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-2">
@@ -105,9 +199,12 @@ export function AIChatPopover({ isOpen, onClose }: AIChatPopoverProps) {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        <div 
+          ref={chatContainerRef}
+          className="flex-1 overflow-y-auto min-h-0"
+        >
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full px-4 py-8 pb-36">
+            <div className="flex flex-col items-center justify-center h-full px-4 py-8 pb-48">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[var(--notion-blue-bg)] to-[var(--notion-blue-text)]/20 flex items-center justify-center mb-8 shadow-lg">
                 <Sparkles className="w-10 h-10 text-[var(--notion-blue-text)]" />
               </div>
@@ -133,13 +230,21 @@ export function AIChatPopover({ isOpen, onClose }: AIChatPopoverProps) {
                     </div>
                   )}
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 flex flex-col gap-2 ${
                       message.role === 'user'
                         ? 'bg-[var(--notion-blue-bg)] text-[var(--notion-blue-text)]'
                         : 'bg-[var(--notion-gray-bg)] text-[var(--foreground)]'
                     }`}
                   >
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                    {message.role === 'user' && message.context && (
+                      <div className="mt-2 pt-2 border-t border-[var(--notion-blue-border)] opacity-70">
+                        <p className="text-xs font-medium mb-1 opacity-80">Context:</p>
+                        <p className="text-xs leading-relaxed whitespace-pre-wrap line-clamp-4">
+                          {message.context}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   {message.role === 'user' && (
                     <div className="w-8 h-8 rounded-full bg-[var(--notion-gray-bg)] flex items-center justify-center flex-shrink-0">
@@ -150,16 +255,43 @@ export function AIChatPopover({ isOpen, onClose }: AIChatPopoverProps) {
                   )}
                 </div>
               ))}
-              <div ref={chatEndRef} />
+              {isLoading && (
+                <div className="flex gap-4 justify-start">
+                  <div className="w-8 h-8 rounded-full bg-[var(--notion-blue-bg)] flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-4 h-4 text-[var(--notion-blue-text)]" />
+                  </div>
+                  <div className="bg-[var(--notion-gray-bg)] rounded-2xl px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-[var(--notion-gray-text)]" />
+                      <span className="text-sm text-[var(--notion-gray-text)]">Thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {error && (
+                <div className="px-4 py-2 bg-[var(--notion-red-bg)] border border-[var(--notion-red-border)] rounded-lg">
+                  <p className="text-sm text-[var(--notion-red-text)]">{error}</p>
+                </div>
+              )}
+              <div ref={chatEndRef} className="h-1" />
             </div>
           )}
         </div>
 
         {/* Input Area */}
-        <div className="flex-shrink-0 rounded-b-2xl absolute bottom-0 left-0 right-0">
+        <div className="flex-shrink-0 rounded-b-2xl left-0 right-0">
           {/* Input Form */}
-          <form onSubmit={handleSubmit} className="relative mx-4 my-4">
-            <div className="flex flex-col gap-2 bg-[var(--notion-gray-bg)] rounded-2xl border border-[var(--notion-gray-border)] px-3 py-3 focus-within:border-[var(--notion-blue-border)] focus-within:ring-2 focus-within:ring-[var(--notion-blue-bg)] transition-all">
+          <form onSubmit={handleSubmit} className="relative mx-4">
+            <div className="flex flex-col gap-3 bg-[var(--notion-gray-bg)] rounded-2xl border border-[var(--notion-gray-border)] px-3 py-3 focus-within:border-[var(--notion-blue-border)] focus-within:ring-2 focus-within:ring-[var(--notion-blue-bg)] transition-all">
+              {/* Context Preview (only show if context exists and hasn't been used yet) */}
+              {context && context.length > 50 && !contextUsed && (
+                <div className="bg-[var(--background)] border border-[var(--notion-gray-border)] rounded-lg p-4 max-h-48 overflow-y-auto">
+                  <p className="text-sm font-medium text-[var(--notion-gray-text)] mb-2">Selected context will be included:</p>
+                  <p className="text-sm text-[var(--foreground)] leading-relaxed whitespace-pre-wrap">
+                    {context}
+                  </p>
+                </div>
+              )}
               <textarea
                 ref={textareaRef}
                 value={query}
@@ -168,7 +300,7 @@ export function AIChatPopover({ isOpen, onClose }: AIChatPopoverProps) {
                   adjustTextareaHeight();
                 }}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask a question or start a conversation..."
+                placeholder={context && context.length > 50 ? "Ask a question about the selected content..." : "Ask a question or start a conversation..."}
                 rows={1}
                 className="w-full resize-none bg-transparent text-[var(--foreground)] placeholder:text-[var(--notion-gray-text)] placeholder:opacity-50 focus:outline-none text-sm leading-relaxed max-h-[200px] overflow-y-auto"
                 style={{ minHeight: '24px' }}
@@ -176,11 +308,19 @@ export function AIChatPopover({ isOpen, onClose }: AIChatPopoverProps) {
               <div className='flex justify-end'>
               <button
                 type="submit"
-                disabled={!query.trim()}
+                disabled={!query.trim() || isLoading || !notebookId || !pageId}
                 className="p-2 rounded-lg bg-[var(--notion-blue-text)] text-white hover:bg-[var(--notion-blue-text-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 flex flex-row items-center gap-2"
                 aria-label="Send"
               >
-                <Send className="w-4 h-4" /> Send
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" /> Send
+                  </>
+                )}
               </button>
               </div>
             </div>

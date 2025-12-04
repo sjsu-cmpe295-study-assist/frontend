@@ -8,15 +8,17 @@ import { EditorBubble } from 'novel';
 import { NodeSelector } from '@/components/editor/NovelNodeSelector';
 import { LinkSelector } from '@/components/editor/NovelLinkSelector';
 import { TextButtons } from '@/components/editor/NovelTextButtons';
+import { NovelAskAI } from '@/components/editor/NovelAskAI';
 import { useState } from 'react';
 
 interface PageEditorProps {
   className?: string;
   initialContent?: JSONContent;
   onUpdate?: (content: JSONContent) => void;
+  onAskAI?: (selectedText: string) => void;
 }
 
-export function PageEditor({ className = '', initialContent, onUpdate }: PageEditorProps) {
+export function PageEditor({ className = '', initialContent, onUpdate, onAskAI }: PageEditorProps) {
   const [openNode, setOpenNode] = useState(false);
   const [openLink, setOpenLink] = useState(false);
   const debouncedOnUpdate = useDebouncedCallback(
@@ -74,6 +76,7 @@ export function PageEditor({ className = '', initialContent, onUpdate }: PageEdi
           <EditorBubble
             tippyOptions={{
               placement: "top",
+              
             }}
             className='flex w-fit max-w-[90vw] overflow-hidden rounded-lg border border-[var(--notion-gray-border)] bg-[var(--background)] shadow-xl items-center'>
               <NodeSelector open={openNode} onOpenChange={setOpenNode} />
@@ -81,6 +84,8 @@ export function PageEditor({ className = '', initialContent, onUpdate }: PageEdi
               <LinkSelector open={openLink} onOpenChange={setOpenLink} />
               <div className='h-6 w-px bg-[var(--notion-gray-border)] mx-1' />
               <TextButtons />
+              <div className='h-6 w-px bg-[var(--notion-gray-border)] mx-1' />
+              <NovelAskAI onAskAI={onAskAI} />
           </EditorBubble>
           </EditorContent>
         </div>

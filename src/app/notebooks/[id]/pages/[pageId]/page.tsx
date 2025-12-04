@@ -39,6 +39,7 @@ export default function PageDetailPage() {
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(false);
   const [pageContent, setPageContent] = useState<any>(null);
   const [isContentLoaded, setIsContentLoaded] = useState(false);
+  const [aiContext, setAiContext] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -213,6 +214,10 @@ export default function PageDetailPage() {
                   initialContent={pageContent || undefined}
                   onUpdate={handlePageContentUpdate}
                   className='h-full'
+                  onAskAI={(selectedText) => {
+                    setAiContext(selectedText);
+                    setIsAIChatOpen(true);
+                  }}
                 />
               )}
             </div>
@@ -247,13 +252,19 @@ export default function PageDetailPage() {
         isOpen={isDocumentsOpen}
         onClose={() => setIsDocumentsOpen(false)}
         documents={notebook.documents || []}
+        notebookId={notebookId}
       />
 
       {/* AI Chat Popover */}
       <AIChatPopover
         isOpen={isAIChatOpen}
-        onClose={() => setIsAIChatOpen(false)}
-        context={page.title}
+        onClose={() => {
+          setIsAIChatOpen(false);
+          setAiContext(undefined);
+        }}
+        context={aiContext} // Only pass selected text, not page title
+        notebookId={notebookId}
+        pageId={pageId}
       />
     </div>
   );

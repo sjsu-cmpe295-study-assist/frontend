@@ -114,6 +114,7 @@ export async function getNotebookById(id: string): Promise<Notebook | undefined>
 
 /**
  * Create a new notebook
+ * For notebooks with documents, processing can take 30-120 seconds
  */
 export async function createNotebook(data: {
   prompt?: string;
@@ -135,12 +136,48 @@ export async function createNotebook(data: {
     requestBody.documents = data.documents;
   }
 
-  const notebook = await apiRequest<any>('/notebooks', {
-    method: 'POST',
-    body: JSON.stringify(requestBody),
-  });
-  
-  return transformNotebook(notebook);
+  const token = getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Create AbortController for timeout handling
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutes timeout
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/notebooks`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({
+        detail: response.statusText,
+      }));
+      throw new ApiError(response.status, errorData.detail || 'Request failed');
+    }
+
+    const notebook = await response.json();
+    return transformNotebook(notebook);
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new ApiError(408, 'Request timeout. Document processing is taking longer than expected.');
+    }
+    throw error;
+  }
 }
 
 /**
@@ -254,4 +291,84 @@ export async function deletePageFromNotebook(
   await apiRequest<void>(`/notebooks/${notebookId}/pages/${pageId}`, {
     method: 'DELETE',
   });
+}
+
+/**
+ * Chat with AI assistant
+ */
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp?: string;
+}
+
+export interface ChatRequest {
+  message: string;
+  context?: string;
+  conversation_id?: string;
+  messages?: ChatMessage[];
+}
+
+export interface ChatResponse {
+  id: string;
+  role: 'assistant';
+  content: string;
+  timestamp: string;
+  conversation_id: string;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
+export async function chatWithAI(
+  notebookId: string,
+  pageId: string,
+  request: ChatRequest
+): Promise<ChatResponse> {
+  return apiRequest<ChatResponse>(`/notebooks/${notebookId}/pages/${pageId}/chat`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+/**
+ * Document interface matching backend response
+ */
+export interface Document {
+  id?: string;
+  name?: string;
+  filename?: string;
+  size?: number;
+  url?: string;
+  type?: string;
+  uploaded_at?: string;
+  [key: string]: any; // Allow additional properties
+}
+
+/**
+ * Get document download URL
+ * Returns a signed URL or direct URL for downloading the document
+ * Note: This endpoint may not exist in the backend yet.
+ * If it doesn't exist, documents should have URLs in their data.
+ */
+export async function getDocumentUrl(
+  notebookId: string,
+  documentId: string
+): Promise<string> {
+  try {
+    // If backend provides a direct endpoint for document URLs
+    const response = await apiRequest<{ url: string }>(
+      `/notebooks/${notebookId}/documents/${documentId}/url`
+    );
+    return response?.url || '';
+  } catch (error) {
+    // If endpoint doesn't exist, return empty string
+    // Documents might have direct URLs in their data
+    if (error instanceof ApiError && error.status === 404) {
+      return '';
+    }
+    throw error;
+  }
 }

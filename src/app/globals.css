@@ -489,13 +489,14 @@ input, textarea {
   background: var(--background);
   font-size: 1.125rem; /* 18px */
   line-height: 1.75;
+
 }
 
 .novel-editor .ProseMirror p,
 [data-novel-editor] .ProseMirror p {
   color: var(--foreground);
   font-size: 1.125rem; /* 18px */
-  line-height: 1.75;
+  line-height: 1.5;
 }
 
 .novel-editor h1 {
@@ -504,18 +505,18 @@ input, textarea {
 }
 
 .novel-editor h2 {
-  font-size: 2.25rem; /* 32px */
-  font-weight: 600;
+  font-size: 2rem; /* 32px */
+  font-weight: 700;
 }
 
 .novel-editor h3 {
-  font-size: 1.75rem; /* 24px */
-  font-weight: 600;
+  font-size: 1.5rem; /* 24px */
+  font-weight: 700;
 }
 
 .novel-editor h4 {
   font-size: 1.25rem; /* 20px */
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .novel-editor .ProseMirror li,

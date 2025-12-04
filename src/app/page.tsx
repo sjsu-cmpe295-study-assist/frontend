@@ -10,6 +10,7 @@ import { NotebookCard } from '@/components/NotebookCard';
 import { Button } from '@/components/Button';
 import { NewNotebookModal } from '@/components/NewNotebookModal';
 import { useNotebookStore } from '@/stores/notebookStore';
+import type { Notebook } from '@/lib/mock-data';
 
 export default function Home() {
   const router = useRouter();
@@ -37,10 +38,30 @@ export default function Home() {
 
   const handleCreateNotebook = async (data: { prompt?: string; documents?: any[] }) => {
     try {
-      await createNotebook(data);
+      const notebook = await createNotebook(data);
       setIsNewNotebookModalOpen(false);
+      
+      // Show success message
+      if (notebook.pagesCount > 0) {
+        // Navigate to the first page if pages were generated
+        if (notebook.pages && notebook.pages.length > 0) {
+          router.push(`/notebooks/${notebook.id}/pages/${notebook.pages[0].id}`);
+        } else {
+          // Fetch notebook to get pages, then navigate
+          router.push(`/notebooks/${notebook.id}`);
+        }
+      } else if (data.documents && data.documents.length > 0) {
+        // Documents were provided but no pages generated
+        alert('Notebook created, but no pages were generated. The documents may have failed to process.');
+        router.push(`/notebooks/${notebook.id}`);
+      } else {
+        // Empty notebook created
+        router.push(`/notebooks/${notebook.id}`);
+      }
     } catch (error) {
       console.error('Failed to create notebook:', error);
+      // Error is already shown in the modal
+      throw error; // Re-throw so modal can handle it
     }
   };
 

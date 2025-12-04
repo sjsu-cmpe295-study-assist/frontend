@@ -11,16 +11,25 @@ interface Document {
   status: 'uploading' | 'processing' | 'completed';
 }
 
+interface ApiDocument {
+  type: 'pdf' | 'image' | 'url';
+  name?: string;
+  data?: string; // Base64 encoded for PDF/image
+  url?: string; // For URL type
+}
+
 interface NewNotebookModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (data: { prompt?: string; documents?: Document[] }) => void;
+  onCreate: (data: { prompt?: string; documents?: ApiDocument[] }) => Promise<void>;
 }
 
 export function NewNotebookModal({ isOpen, onClose, onCreate }: NewNotebookModalProps) {
   const [prompt, setPrompt] = useState('');
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [progress, setProgress] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -32,10 +41,34 @@ export function NewNotebookModal({ isOpen, onClose, onCreate }: NewNotebookModal
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // Remove data URL prefix (e.g., "data:application/pdf;base64,")
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleFileSelect = useCallback((files: FileList | null) => {
     if (!files) return;
 
-    const newDocuments: Document[] = Array.from(files).map((file) => ({
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const validFiles: File[] = [];
+
+    Array.from(files).forEach((file) => {
+      if (file.size > MAX_FILE_SIZE) {
+        alert(`File ${file.name} is too large. Maximum size is 10MB.`);
+        return;
+      }
+      validFiles.push(file);
+    });
+
+    const newDocuments: Document[] = validFiles.map((file) => ({
       id: Math.random().toString(36).substring(7),
       file,
       size: file.size,
@@ -44,20 +77,16 @@ export function NewNotebookModal({ isOpen, onClose, onCreate }: NewNotebookModal
 
     setDocuments((prev) => [...prev, ...newDocuments]);
 
-    // Simulate upload and processing
-    newDocuments.forEach((doc) => {
-      setTimeout(() => {
-        setDocuments((prev) =>
-          prev.map((d) => (d.id === doc.id ? { ...d, status: 'processing' } : d))
-        );
-      }, 1000);
-
-      setTimeout(() => {
-        setDocuments((prev) =>
-          prev.map((d) => (d.id === doc.id ? { ...d, status: 'completed' } : d))
-        );
-      }, 3000);
-    });
+    // Mark as completed immediately (actual processing happens on backend)
+    setTimeout(() => {
+      setDocuments((prev) =>
+        prev.map((d) => 
+          newDocuments.some(nd => nd.id === d.id) 
+            ? { ...d, status: 'completed' } 
+            : d
+        )
+      );
+    }, 500);
   }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -84,12 +113,78 @@ export function NewNotebookModal({ isOpen, onClose, onCreate }: NewNotebookModal
     setDocuments((prev) => prev.filter((d) => d.id !== id));
   };
 
-  const handleCreate = () => {
-    onCreate({
-      prompt: prompt.trim() || undefined,
-      documents: documents.length > 0 ? documents : undefined,
-    });
-    handleClose();
+  const handleCreate = async () => {
+    setIsCreating(true);
+    setProgress('Preparing documents...');
+
+    try {
+      // Convert files to API document format
+      const apiDocuments: ApiDocument[] = [];
+
+      if (documents.length > 0) {
+        setProgress(`Converting ${documents.length} file(s) to base64...`);
+
+        for (let i = 0; i < documents.length; i++) {
+          const doc = documents[i];
+          const file = doc.file;
+          
+          setProgress(`Processing file ${i + 1} of ${documents.length}...`);
+          
+          if (file.type === 'application/pdf') {
+            const base64Data = await fileToBase64(file);
+            apiDocuments.push({
+              type: 'pdf',
+              name: file.name,
+              data: base64Data,
+            });
+          } else if (file.type.startsWith('image/')) {
+            const base64Data = await fileToBase64(file);
+            apiDocuments.push({
+              type: 'image',
+              name: file.name,
+              data: base64Data,
+            });
+          } else {
+            // For other file types, try to convert to base64
+            // Backend will handle the conversion
+            const base64Data = await fileToBase64(file);
+            apiDocuments.push({
+              type: 'pdf', // Default to pdf type
+              name: file.name,
+              data: base64Data,
+            });
+          }
+        }
+      }
+
+      if (apiDocuments.length > 0) {
+        setProgress('Creating notebook and processing documents...');
+        setProgress('This may take 30-120 seconds depending on document size...');
+      } else {
+        setProgress('Creating notebook...');
+      }
+
+      await onCreate({
+        prompt: prompt.trim() || undefined,
+        documents: apiDocuments.length > 0 ? apiDocuments : undefined,
+      });
+
+      handleClose();
+    } catch (error) {
+      console.error('Error creating notebook:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create notebook';
+      setProgress(`Error: ${errorMessage}`);
+      alert(errorMessage);
+      // Don't close modal on error, let user retry
+    } finally {
+      setIsCreating(false);
+      // Keep progress message visible for a moment before clearing
+      setTimeout(() => {
+        if (!isCreating) {
+          setProgress('');
+        }
+      }, 3000);
+    }
   };
 
   const handleClose = () => {
@@ -145,7 +240,7 @@ export function NewNotebookModal({ isOpen, onClose, onCreate }: NewNotebookModal
                   multiple
                   onChange={handleFileInputChange}
                   className="hidden"
-                  accept=".pdf,.doc,.docx,.txt,.md"
+                  accept=".pdf,.doc,.docx,.txt,.md,image/*"
                 />
               </div>
 
@@ -221,12 +316,29 @@ export function NewNotebookModal({ isOpen, onClose, onCreate }: NewNotebookModal
                   <Button
                     variant="primary"
                     onClick={handleCreate}
-                    className="flex items-center gap-2 px-4 py-2"
+                    disabled={isCreating}
+                    className="flex items-center gap-2 px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Sparkles className="w-5 h-5" />
-                    <span>Create Notebook</span>
+                    {isCreating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Creating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        <span>Create Notebook</span>
+                      </>
+                    )}
                   </Button>
                 </div>
+                {isCreating && progress && (
+                  <div className="absolute bottom-16 left-3 right-3">
+                    <div className="bg-[var(--notion-blue-bg)] border border-[var(--notion-blue-border)] rounded-lg px-4 py-2">
+                      <p className="text-sm text-[var(--notion-blue-text)]">{progress}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

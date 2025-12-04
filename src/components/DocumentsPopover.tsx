@@ -2,25 +2,19 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { X, FileText, Download, ExternalLink } from 'lucide-react';
-
-interface Document {
-  id?: string;
-  name?: string;
-  filename?: string;
-  size?: number;
-  url?: string;
-  type?: string;
-  uploadedAt?: string;
-  [key: string]: any; // Allow additional properties
-}
+import { getDocumentUrl, type Document } from '@/lib/api/notebooks';
 
 interface DocumentsPopoverProps {
   isOpen: boolean;
   onClose: () => void;
   documents: Document[];
+  notebookId?: string;
 }
 
-export function DocumentsPopover({ isOpen, onClose, documents }: DocumentsPopoverProps) {
+export function DocumentsPopover({ isOpen, onClose, documents, notebookId }: DocumentsPopoverProps) {
+  const [loadingDocs, setLoadingDocs] = useState<Record<string, boolean>>({});
+  const [docUrls, setDocUrls] = useState<Record<string, string>>({});
+
   const formatFileSize = (bytes?: number) => {
     if (!bytes || bytes === 0) return 'Unknown size';
     const k = 1024;
@@ -38,19 +32,123 @@ export function DocumentsPopover({ isOpen, onClose, documents }: DocumentsPopove
     return FileText;
   };
 
-  const handleDownload = (document: Document) => {
-    if (document.url) {
-      window.open(document.url, '_blank');
+  // Fetch document URL if not already available
+  useEffect(() => {
+    if (!isOpen || !notebookId) return;
+
+    // Debug: Log documents to see their structure
+    console.log('DocumentsPopover - Documents received:', documents);
+
+    documents.forEach(async (document) => {
+      const docId = document.id || document.filename || document.name;
+      if (!docId) return;
+
+      // If document already has a URL, use it
+      if (document.url) {
+        console.log(`Document ${docId} has URL:`, document.url);
+        setDocUrls((prev) => ({ ...prev, [docId]: document.url as string }));
+        return;
+      }
+
+      // If URL is already fetched, skip
+      if (docUrls[docId]) return;
+
+      // Only try to fetch URL if document has an ID (required for API call)
+      // If no ID, assume document doesn't have a URL yet (still processing)
+      if (notebookId && document.id) {
+        console.log(`Attempting to fetch URL for document ${docId}`);
+        try {
+          setLoadingDocs((prev) => ({ ...prev, [docId]: true }));
+          const url = await getDocumentUrl(notebookId, document.id);
+          if (url) {
+            console.log(`Successfully fetched URL for document ${docId}:`, url);
+            setDocUrls((prev) => ({ ...prev, [docId]: url as string }));
+          } else {
+            console.log(`No URL returned for document ${docId} - document may still be processing`);
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch document URL for ${docId}:`, error);
+          // If endpoint doesn't exist (404), documents should have URLs in response
+          // If other error, document might still be processing
+        } finally {
+          setLoadingDocs((prev) => ({ ...prev, [docId]: false }));
+        }
+      } else {
+        console.log(`Document ${docId} has no ID - cannot fetch URL`);
+      }
+    });
+  }, [isOpen, notebookId, documents]);
+
+  const handleDownload = async (document: Document) => {
+    const docId = document.id || document.filename || document.name;
+    if (!docId) return;
+
+    // Try to get URL from state or document
+    let url = docUrls[docId] || document.url;
+
+    // If no URL available, try to fetch it
+    if (!url && notebookId && document.id) {
+      try {
+        setLoadingDocs((prev) => ({ ...prev, [docId]: true }));
+        const fetchedUrl = await getDocumentUrl(notebookId, document.id);
+        if (fetchedUrl) {
+          setDocUrls((prev) => ({ ...prev, [docId]: fetchedUrl }));
+          url = fetchedUrl;
+        }
+      } catch (error) {
+        console.error('Failed to get document URL:', error);
+        alert('Unable to download document. Please try again later.');
+        return;
+      } finally {
+        setLoadingDocs((prev) => ({ ...prev, [docId]: false }));
+      }
+    }
+
+    if (url) {
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = document.name || document.filename || 'document';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } else {
       console.warn('Document URL not available');
+      alert('Document URL is not available. The document may still be processing.');
     }
   };
 
-  const handleOpen = (document: Document) => {
-    if (document.url) {
-      window.open(document.url, '_blank');
+  const handleOpen = async (document: Document) => {
+    const docId = document.id || document.filename || document.name;
+    if (!docId) return;
+
+    // Try to get URL from state or document
+    let url = docUrls[docId] || document.url;
+
+    // If no URL available, try to fetch it
+    if (!url && notebookId && document.id) {
+      try {
+        setLoadingDocs((prev) => ({ ...prev, [docId]: true }));
+        const fetchedUrl = await getDocumentUrl(notebookId, document.id);
+        if (fetchedUrl) {
+          setDocUrls((prev) => ({ ...prev, [docId]: fetchedUrl }));
+          url = fetchedUrl;
+        }
+      } catch (error) {
+        console.error('Failed to get document URL:', error);
+        alert('Unable to open document. Please try again later.');
+        return;
+      } finally {
+        setLoadingDocs((prev) => ({ ...prev, [docId]: false }));
+      }
+    }
+
+    if (url) {
+      window.open(url, '_blank');
     } else {
       console.warn('Document URL not available');
+      alert('Document URL is not available. The document may still be processing.');
     }
   };
 
@@ -105,11 +203,14 @@ export function DocumentsPopover({ isOpen, onClose, documents }: DocumentsPopove
                 const FileIcon = getFileIcon(document.type, document.name || document.filename);
                 const displayName = document.name || document.filename || `Document ${index + 1}`;
                 const displaySize = formatFileSize(document.size);
+                const docId = document.id || document.filename || document.name || `doc-${index}`;
+                const isLoading = loadingDocs[docId];
+                const hasUrl = docUrls[docId] || document.url;
                 
                 return (
                   <div
                     key={document.id || index}
-                    className="group flex items-center gap-3 p-3 rounded-lg border border-[var(--notion-gray-border)] bg-[var(--background)] hover:bg-[var(--notion-gray-bg-hover)] transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-lg border border-[var(--notion-gray-border)] bg-[var(--background)]"
                   >
                     <div className="w-10 h-10 rounded-md bg-[var(--notion-green-bg)] flex items-center justify-center flex-shrink-0">
                       <FileIcon className="w-5 h-5 text-[var(--notion-green-text)]" />
@@ -124,28 +225,11 @@ export function DocumentsPopover({ isOpen, onClose, documents }: DocumentsPopove
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {document.url && (
-                        <>
-                          <button
-                            onClick={() => handleOpen(document)}
-                            className="p-2 rounded-md hover:bg-[var(--notion-gray-bg)] transition-colors"
-                            aria-label="Open document"
-                            title="Open in new tab"
-                          >
-                            <ExternalLink className="w-4 h-4 text-[var(--notion-gray-text)]" />
-                          </button>
-                          <button
-                            onClick={() => handleDownload(document)}
-                            className="p-2 rounded-md hover:bg-[var(--notion-gray-bg)] transition-colors"
-                            aria-label="Download document"
-                            title="Download"
-                          >
-                            <Download className="w-4 h-4 text-[var(--notion-gray-text)]" />
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    {isLoading && (
+                      <div className="flex-shrink-0">
+                        <div className="w-4 h-4 border-2 border-[var(--notion-gray-text)] border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
                   </div>
                 );
               })}
