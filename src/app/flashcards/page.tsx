@@ -19,6 +19,7 @@ export default function FlashCardsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFlashCard, setSelectedFlashCard] = useState<FlashCard | null>(null);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [shouldRefresh, setShouldRefresh] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -63,6 +64,26 @@ export default function FlashCardsPage() {
   const handleClosePopover = () => {
     setIsPopoverOpen(false);
     setSelectedFlashCard(null);
+    // Refresh flash cards if an answer was submitted
+    if (shouldRefresh) {
+      setShouldRefresh(false);
+      setIsLoading(true);
+      getFlashCards()
+        .then((cards) => {
+          setFlashCards(cards);
+        })
+        .catch((error) => {
+          console.error('Failed to refresh flash cards:', error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  };
+
+  const handleAnswerSubmitted = () => {
+    // Mark that we should refresh when popover closes
+    setShouldRefresh(true);
   };
 
   const handleDeleteFlashCard = async (flashCardId: string) => {
@@ -170,6 +191,7 @@ export default function FlashCardsPage() {
         isOpen={isPopoverOpen}
         onClose={handleClosePopover}
         flashCard={selectedFlashCard}
+        onAnswerSubmitted={handleAnswerSubmitted}
       />
     </div>
   );

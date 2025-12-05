@@ -9,9 +9,10 @@ interface FlashCardPopoverProps {
   isOpen: boolean;
   onClose: () => void;
   flashCard: FlashCard | null;
+  onAnswerSubmitted?: () => void;
 }
 
-export function FlashCardPopover({ isOpen, onClose, flashCard }: FlashCardPopoverProps) {
+export function FlashCardPopover({ isOpen, onClose, flashCard, onAnswerSubmitted }: FlashCardPopoverProps) {
   const [answer, setAnswer] = useState('');
   const [submittedAnswer, setSubmittedAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,6 +32,10 @@ export function FlashCardPopover({ isOpen, onClose, flashCard }: FlashCardPopove
     try {
       const result = await submitFlashCardAnswer(flashCard.id, trimmedAnswer);
       setSubmissionResult(result);
+      // Notify parent that an answer was submitted
+      if (onAnswerSubmitted) {
+        onAnswerSubmitted();
+      }
     } catch (error) {
       console.error('Failed to submit flash card answer:', error);
       alert('Failed to submit answer. Please try again.');

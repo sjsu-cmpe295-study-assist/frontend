@@ -173,19 +173,22 @@ export default function PageDetailPage() {
   };
 
   const handlePageContentUpdate = async (content: any) => {
-    // Update current content immediately for real-time stats
+    // Update current content immediately for real-time stats (optimistic update)
     setCurrentContent(content);
     
     if (notebookId && pageId) {
       try {
         const updatedPage = await updatePage(notebookId, pageId, { content });
-        // Update local content state to reflect the saved content
+        // Only update pageContent from API response (source of truth for reloads)
+        // Don't update currentContent here to avoid race conditions with rapid edits
         if (updatedPage?.content !== undefined) {
           setPageContent(updatedPage.content || null);
-          setCurrentContent(updatedPage.content || null);
         }
       } catch (error) {
         console.error('Failed to update page content:', error);
+        // Don't revert currentContent on error - preserve user's current input
+        // The editor maintains its own state, so user's work is not lost
+        // Keeping currentContent preserves accurate stats calculation
       }
     }
   };
