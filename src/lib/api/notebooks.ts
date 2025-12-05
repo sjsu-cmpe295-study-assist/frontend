@@ -68,6 +68,7 @@ function transformNotebook(backendNotebook: any): Notebook {
     createdAt: backendNotebook.createdAt,
     pagesCount: backendNotebook.pagesCount || 0,
     documentsCount: backendNotebook.documentsCount || 0,
+    flashCardsCount: backendNotebook.flashCardsCount || 0,
     pages: backendNotebook.pages
       ? backendNotebook.pages.map(transformPage)
       : undefined,

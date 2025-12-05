@@ -9,6 +9,7 @@ import { NodeSelector } from '@/components/editor/NovelNodeSelector';
 import { LinkSelector } from '@/components/editor/NovelLinkSelector';
 import { TextButtons } from '@/components/editor/NovelTextButtons';
 import { NovelAskAI } from '@/components/editor/NovelAskAI';
+import { NovelMakeFlashCard } from '@/components/editor/NovelMakeFlashCard';
 import { useState } from 'react';
 
 interface PageEditorProps {
@@ -16,9 +17,10 @@ interface PageEditorProps {
   initialContent?: JSONContent;
   onUpdate?: (content: JSONContent) => void;
   onAskAI?: (selectedText: string) => void;
+  onMakeFlashCard?: (selectedText: string) => void;
 }
 
-export function PageEditor({ className = '', initialContent, onUpdate, onAskAI }: PageEditorProps) {
+export function PageEditor({ className = '', initialContent, onUpdate, onAskAI, onMakeFlashCard }: PageEditorProps) {
   const [openNode, setOpenNode] = useState(false);
   const [openLink, setOpenLink] = useState(false);
   const debouncedOnUpdate = useDebouncedCallback(
@@ -56,23 +58,23 @@ export function PageEditor({ className = '', initialContent, onUpdate, onAskAI }
         </EditorCommandList>
         </EditorCommand>
         <div className="max-w-[900px] mx-auto">
-          <EditorContent
+        <EditorContent
             className="w-full"
-            extensions={extensions}
-            initialContent={initialContent}
-            editorProps={{
-              handleDOMEvents: {
-                  keydown: (_view, event) => handleCommandNavigation(event),
-                },
-              attributes: {
-                class: 'novel-editor prose prose-xl max-w-none focus:outline-none min-h-[500px] text-lg !space-y-5',
+          extensions={extensions}
+          initialContent={initialContent}
+          editorProps={{
+            handleDOMEvents: {
+                keydown: (_view, event) => handleCommandNavigation(event),
               },
-            }}
-            onUpdate={({ editor }) => {
-              const json = editor.getJSON();
-              debouncedOnUpdate(json);
-            }}
-          >
+            attributes: {
+                class: 'novel-editor prose prose-xl max-w-none focus:outline-none min-h-[500px] text-lg !space-y-5',
+            },
+          }}
+          onUpdate={({ editor }) => {
+            const json = editor.getJSON();
+            debouncedOnUpdate(json);
+          }}
+        >
           <EditorBubble
             tippyOptions={{
               placement: "top",
@@ -86,8 +88,10 @@ export function PageEditor({ className = '', initialContent, onUpdate, onAskAI }
               <TextButtons />
               <div className='h-6 w-px bg-[var(--notion-gray-border)] mx-1' />
               <NovelAskAI onAskAI={onAskAI} />
+              <div className='h-6 w-px bg-[var(--notion-gray-border)] mx-1' />
+              <NovelMakeFlashCard onMakeFlashCard={onMakeFlashCard} />
           </EditorBubble>
-          </EditorContent>
+        </EditorContent>
         </div>
       </EditorRoot>
     </div>

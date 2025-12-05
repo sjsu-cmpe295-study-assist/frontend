@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Paperclip, MoreHorizontal, Trash2 } from 'lucide-react';
+import { FileText, Paperclip, FileQuestion, MoreHorizontal, Trash2 } from 'lucide-react';
 import { type Notebook } from '@/lib/mock-data';
 import { useNotebookStore } from '@/stores/notebookStore';
 
@@ -96,7 +96,7 @@ export function NotebookCard({ notebook, titleSize = 'md', onDelete }: NotebookC
         {notebook.title}
       </h3>
       {notebook.description && (
-        <p className="text-sm text-[var(--foreground)] opacity-70 line-clamp-3  leading-relaxed">
+        <p className="text-sm text-[var(--foreground)] opacity-70 line-clamp-3  leading-relaxed mt-1">
           {notebook.description}
         </p>
       )}
@@ -112,10 +112,16 @@ export function NotebookCard({ notebook, titleSize = 'md', onDelete }: NotebookC
           <Paperclip className="w-3.5 h-3.5" />
           {notebook.documentsCount} {notebook.documentsCount === 1 ? 'document' : 'documents'}
         </span>
+        {(notebook.flashCardsCount !== undefined && notebook.flashCardsCount > 0) && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--notion-purple-bg)] text-[var(--notion-purple-text)] border border-[var(--notion-purple-border)]">
+            <FileQuestion className="w-3.5 h-3.5" />
+            {notebook.flashCardsCount} {notebook.flashCardsCount === 1 ? 'flashcard' : 'flashcards'}
+          </span>
+        )}
       </div>
       </div>
       
-      <div className="flex items-center justify-between mt-auto">
+      <div className="flex items-center justify-between mt-auto pt-6">
         <p className="text-xs font-medium text-[var(--foreground)] opacity-60">
           {formatDate(notebook.updatedAt)}
         </p>
@@ -127,10 +133,10 @@ export function NotebookCard({ notebook, titleSize = 'md', onDelete }: NotebookC
               e.stopPropagation();
               setIsMenuOpen(!isMenuOpen);
             }}
-            className="p-1.5 rounded-md hover:bg-[var(--notion-gray-bg-hover)] transition-colors"
+            className="p-1.5 rounded-full hover:bg-[var(--notion-gray-bg-hover)] transition-colors"
             aria-label="More options"
           >
-            <MoreHorizontal className="w-4 h-4 text-[var(--notion-gray-text)]" />
+            <MoreHorizontal className="w-5 h-5 text-[var(--notion-gray-text)]" />
           </button>
 
           {/* Dropdown Menu */}

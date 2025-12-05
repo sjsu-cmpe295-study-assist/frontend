@@ -209,6 +209,19 @@ export function NewNotebookModal({ isOpen, onClose, onCreate }: NewNotebookModal
         className="bg-[var(--background)] w-3/4 h-3/4 overflow-hidden flex flex-col rounded-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--notion-gray-border)] flex-shrink-0">
+          <h2 className="text-xl font-semibold text-[var(--foreground)]">
+            Create Notebook
+          </h2>
+          <button
+            onClick={handleClose}
+            className="p-2 rounded-full hover:bg-[var(--notion-red-bg)] hover:text-[var(--notion-red-text)] transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden flex flex-col p-8">
@@ -301,17 +314,7 @@ export function NewNotebookModal({ isOpen, onClose, onCreate }: NewNotebookModal
                   className="w-full h-full px-4 py-3 pb-20 rounded-2xl border border-[var(--notion-gray-border)] bg-[var(--background)] text-[var(--foreground)] placeholder:text-[var(--notion-gray-text)] placeholder:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--notion-blue-text)] focus:border-[var(--notion-blue-border)] resize-none text-base"
                   autoFocus
                 />
-                {/* Action Buttons */}
-                <div className="absolute bottom-3 left-3">
-                  <Button
-                    variant="secondary"
-                    onClick={handleClose}
-                    className="flex items-center gap-2 px-4 py-2 bg-[var(--notion-red-bg)] text-[var(--notion-red-text)] border-[var(--notion-red-border)] hover:bg-[var(--notion-red-bg)] hover:text-[var(--notion-red-text)] hover:opacity-90"
-                  >
-                    <X className="w-5 h-5" />
-                    <span>Cancel</span>
-                  </Button>
-                </div>
+                {/* Action Button */}
                 <div className="absolute bottom-3 right-3">
                   <Button
                     variant="primary"

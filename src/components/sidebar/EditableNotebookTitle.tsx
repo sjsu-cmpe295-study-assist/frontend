@@ -62,7 +62,7 @@ export function EditableNotebookTitle({ notebook, notebookId, onUpdate }: Editab
     <h2
       onClick={() => setIsEditing(true)}
       className="text-2xl font-semibold mb-4 line-clamp-3 cursor-text hover:bg-[var(--notion-gray-bg-hover)] rounded px-1 py-1 -mx-3 transition-colors"
-      style={{ lineHeight: '1.5',  }}
+      style={{ lineHeight: '1.2',  }}
     >
       {isEditing ? (
         <textarea
@@ -73,7 +73,7 @@ export function EditableNotebookTitle({ notebook, notebookId, onUpdate }: Editab
           onKeyDown={handleKeyDown}
           onClick={(e) => e.stopPropagation()}
           className="w-full !text-2xl !font-semibold text-[var(--foreground)] bg-transparent border-none outline-none resize-none overflow-hidden px-0 !py-0 !m-0"
-          style={{ lineHeight: '1.5', minHeight: 'auto', width: '90%' }}
+          style={{ lineHeight: '1.2', minHeight: 'auto', width: '90%' }}
           rows={1}
         />
       ) : (

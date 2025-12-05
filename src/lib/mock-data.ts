@@ -20,6 +20,7 @@ export interface Notebook {
   createdAt: string;
   pagesCount: number;
   documentsCount: number;
+  flashCardsCount?: number;
   pages?: Page[];
   documents?: any[]; // Array of document objects
 }

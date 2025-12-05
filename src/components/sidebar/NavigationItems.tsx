@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Book, Clock } from 'lucide-react';
+import { Book, FileQuestion } from 'lucide-react';
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -10,7 +10,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: Book, label: 'Notebooks', href: '/' },
-  { icon: Clock, label: 'Recent', href: '/recent' },
+  { icon: FileQuestion, label: 'Flash Cards', href: '/flashcards' },
 ];
 
 export function NavigationItems() {

@@ -8,7 +8,12 @@ import { useNotebookStore } from '@/stores/notebookStore';
 import { PageEditor } from '@/components/editor/PageEditor';
 import { AIChatPopover } from '@/components/AIChatPopover';
 import { DocumentsPopover } from '@/components/DocumentsPopover';
-import { Sparkles, FileText } from 'lucide-react';
+import { FlashCardsPopover } from '@/components/FlashCardsPopover';
+import { createFlashCard } from '@/lib/api/flashcards';
+import { ToastContainer } from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
+import { Sparkles, FileText, FileQuestion } from 'lucide-react';
+import { getContentStats } from '@/lib/utils/content-stats';
 
 export default function PageDetailPage() {
   const router = useRouter();
@@ -37,9 +42,21 @@ export default function PageDetailPage() {
   }, [pages, pageId]);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(false);
+  const [isFlashCardsOpen, setIsFlashCardsOpen] = useState(false);
   const [pageContent, setPageContent] = useState<any>(null);
   const [isContentLoaded, setIsContentLoaded] = useState(false);
   const [aiContext, setAiContext] = useState<string | undefined>(undefined);
+  const [currentContent, setCurrentContent] = useState<any>(null);
+  const { toasts, toast, removeToast } = useToast();
+
+  // Calculate content statistics
+  const contentStats = useMemo(() => {
+    const content = currentContent || pageContent;
+    if (!content) {
+      return { wordCount: 0, readingTime: 0, readingTimeFormatted: '< 1 min' };
+    }
+    return getContentStats(content);
+  }, [currentContent, pageContent]);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -81,18 +98,23 @@ export default function PageDetailPage() {
       
       if (cachedPage?.content !== undefined) {
         // Content is already in cache
-        setPageContent(cachedPage.content || null);
+        const content = cachedPage.content || null;
+        setPageContent(content);
+        setCurrentContent(content);
         setIsContentLoaded(true);
       } else {
         // Fetch page from API to get content
         getPageById(notebookId, pageId).then((fetchedPage) => {
           if (fetchedPage) {
-            setPageContent(fetchedPage.content || null);
+            const content = fetchedPage.content || null;
+            setPageContent(content);
+            setCurrentContent(content);
             setIsContentLoaded(true);
           }
         }).catch((error) => {
           console.error('Failed to fetch page content:', error);
           setPageContent(null);
+          setCurrentContent(null);
           setIsContentLoaded(true);
         });
       }
@@ -151,12 +173,16 @@ export default function PageDetailPage() {
   };
 
   const handlePageContentUpdate = async (content: any) => {
+    // Update current content immediately for real-time stats
+    setCurrentContent(content);
+    
     if (notebookId && pageId) {
       try {
         const updatedPage = await updatePage(notebookId, pageId, { content });
         // Update local content state to reflect the saved content
         if (updatedPage?.content !== undefined) {
           setPageContent(updatedPage.content || null);
+          setCurrentContent(updatedPage.content || null);
         }
       } catch (error) {
         console.error('Failed to update page content:', error);
@@ -183,6 +209,30 @@ export default function PageDetailPage() {
     }
   };
 
+  const handleMakeFlashCard = async (selectedText: string) => {
+    if (!notebookId || !pageId) return;
+
+    const loadingToastId = toast.loading('Creating flashcard...');
+
+    try {
+      await createFlashCard({
+        notebookId,
+        pageId,
+        content: selectedText,
+      });
+      
+      // Remove loading toast and show success
+      removeToast(loadingToastId);
+      toast.success('Flashcard created successfully!');
+    } catch (error) {
+      console.error('Failed to create flash card:', error);
+      
+      // Remove loading toast and show error
+      removeToast(loadingToastId);
+      toast.error('Failed to create flashcard. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
@@ -205,9 +255,21 @@ export default function PageDetailPage() {
         <div className="flex-1 overflow-y-auto">
           <div className="w-full py-8 min-h-screen">
             <div className="max-w-[900px] mx-auto flex flex-col h-full">
-              <h3 className="text-xl font-bold text-[var(--foreground)] pt-10 mb-6 px-4 sm:px-8 opacity-60">
-                {page.title}
-              </h3>
+              <div className="px-4 sm:px-8 pt-10 mb-6 flex flex-row items-center justify-between">
+                <h3 className="text-xl font-bold text-[var(--foreground)] opacity-60">
+                  {page.title}
+                </h3>
+                {isContentLoaded && (
+                  <div className="flex items-center gap-2 flex-row">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-sm font-semibold bg-[var(--notion-blue-bg)] text-[var(--notion-blue-text)] border border-[var(--notion-blue-border)]">
+                      {contentStats.wordCount.toLocaleString()} words
+                    </span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-sm font-semibold bg-[var(--notion-green-bg)] text-[var(--notion-green-text)] border border-[var(--notion-green-border)]">
+                      {contentStats.readingTimeFormatted} read
+                    </span>
+                  </div>
+                )}
+              </div>
               {isContentLoaded && (
                 <PageEditor 
                   key={pageId} // Force re-render when page changes
@@ -218,6 +280,7 @@ export default function PageDetailPage() {
                     setAiContext(selectedText);
                     setIsAIChatOpen(true);
                   }}
+                  onMakeFlashCard={handleMakeFlashCard}
                 />
               )}
             </div>
@@ -229,10 +292,21 @@ export default function PageDetailPage() {
       {!isDocumentsOpen && (
         <button
           onClick={() => setIsDocumentsOpen(true)}
-          className="fixed bottom-24 right-6 w-12 h-12 rounded-full bg-[var(--notion-green-text)] text-white shadow-lg hover:bg-[var(--notion-green-text-hover)] transition-all hover:scale-105 flex items-center justify-center z-30"
+          className="fixed bottom-40 right-6 w-12 h-12 rounded-full bg-[var(--notion-green-text)] text-white shadow-lg hover:bg-[var(--notion-green-text-hover)] transition-all hover:scale-105 flex items-center justify-center z-30"
           aria-label="Open documents"
         >
           <FileText className="w-5 h-5" />
+        </button>
+      )}
+
+      {/* Flash Cards Trigger Button */}
+      {!isFlashCardsOpen && (
+        <button
+          onClick={() => setIsFlashCardsOpen(true)}
+          className="fixed bottom-24 right-6 w-12 h-12 rounded-full bg-[var(--notion-purple-text)] text-white shadow-lg hover:bg-[var(--notion-purple-text-hover)] transition-all hover:scale-105 flex items-center justify-center z-30"
+          aria-label="Open flash cards"
+        >
+          <FileQuestion className="w-5 h-5" />
         </button>
       )}
 
@@ -255,6 +329,14 @@ export default function PageDetailPage() {
         notebookId={notebookId}
       />
 
+      {/* Flash Cards Popover */}
+      <FlashCardsPopover
+        isOpen={isFlashCardsOpen}
+        onClose={() => setIsFlashCardsOpen(false)}
+        notebookId={notebookId}
+        notebookTitle={notebook.title}
+      />
+
       {/* AI Chat Popover */}
       <AIChatPopover
         isOpen={isAIChatOpen}
@@ -266,6 +348,9 @@ export default function PageDetailPage() {
         notebookId={notebookId}
         pageId={pageId}
       />
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }
