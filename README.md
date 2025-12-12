@@ -205,3 +205,4 @@ pnpm lint
 - [Notion](https://www.notion.so/) for design inspiration
 - [Radix UI](https://www.radix-ui.com/) for accessible components
 
+
